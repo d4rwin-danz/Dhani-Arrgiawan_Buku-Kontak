@@ -171,33 +171,42 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // WIDGET DAFTAR KONTAK
-  Widget daftarKontak() {
-    if (items.isEmpty) {
-      return const Center(
-        child: Text(
-          'Belum ada kontak',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading: const Icon(Icons.person),
-          title: Text(
-            items[index].nama,
-          ),
-          subtitle: Text(
-            '${items[index].email}\n'
-            '${items[index].noHandphone}',
-          ),
-        );
-      },
+// WIDGET DAFTAR KONTAK
+Widget daftarKontak() {
+  if (items.isEmpty) {
+    return const Center(
+      child: Text(
+        'Belum ada kontak',
+        style: TextStyle(fontSize: 16),
+      ),
     );
   }
+
+  return ListView.builder(
+    itemCount: items.length,
+    itemBuilder: (context, index) {
+      return ListTile(
+        // Avatar berisi huruf pertama nama kontak
+        leading: CircleAvatar(
+          child: Text(
+            items[index].nama.isNotEmpty
+                ? items[index].nama[0].toUpperCase()
+                : '?',
+          ),
+        ),
+
+        title: Text(
+          items[index].nama,
+        ),
+
+        subtitle: Text(
+          '${items[index].email}\n'
+          '${items[index].noHandphone}',
+        ),
+      );
+    },
+  );
+}
 }
 
 // HALAMAN TAMBAH KONTAK
