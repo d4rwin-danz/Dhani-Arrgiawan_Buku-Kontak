@@ -49,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         items.add(hasil);
       });
+
       DefaultTabController.of(context).animateTo(0);
     }
   }
@@ -171,42 +172,45 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-// WIDGET DAFTAR KONTAK
-Widget daftarKontak() {
-  if (items.isEmpty) {
-    return const Center(
-      child: Text(
-        'Belum ada kontak',
-        style: TextStyle(fontSize: 16),
-      ),
-    );
-  }
-
-  return ListView.builder(
-    itemCount: items.length,
-    itemBuilder: (context, index) {
-      return ListTile(
-        // Avatar berisi huruf pertama nama kontak
-        leading: CircleAvatar(
-          child: Text(
-            items[index].nama.isNotEmpty
-                ? items[index].nama[0].toUpperCase()
-                : '?',
-          ),
-        ),
-
-        title: Text(
-          items[index].nama,
-        ),
-
-        subtitle: Text(
-          '${items[index].email}\n'
-          '${items[index].noHandphone}',
+  // WIDGET DAFTAR KONTAK
+  Widget daftarKontak() {
+    if (items.isEmpty) {
+      return const Center(
+        child: Text(
+          'Belum ada kontak',
+          style: TextStyle(fontSize: 16),
         ),
       );
-    },
-  );
-}
+    }
+
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          // Avatar berisi huruf pertama nama kontak
+          leading: CircleAvatar(
+            child: Text(
+              items[index].nama.isNotEmpty
+                  ? items[index].nama[0].toUpperCase()
+                  : '?',
+            ),
+          ),
+
+          // Nama kontak
+          title: Text(
+            items[index].nama,
+          ),
+
+          // Email, nomor HP, dan kategori
+          subtitle: Text(
+            '${items[index].email}\n'
+            '${items[index].noHandphone}\n'
+            '${items[index].kategori ?? 'Tanpa kategori'}',
+          ),
+        );
+      },
+    );
+  }
 }
 
 // HALAMAN TAMBAH KONTAK
@@ -223,13 +227,20 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
   final TextEditingController emailController = TextEditingController();
 
-  final TextEditingController noHandphoneController = TextEditingController();
+  final TextEditingController noHandphoneController =
+      TextEditingController();
+
+  // Controller kategori
+  final TextEditingController kategoriController =
+      TextEditingController();
 
   @override
   void dispose() {
     namaController.dispose();
     emailController.dispose();
     noHandphoneController.dispose();
+    kategoriController.dispose();
+
     super.dispose();
   }
 
@@ -240,6 +251,11 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       nama: namaController.text,
       email: emailController.text,
       noHandphone: noHandphoneController.text,
+
+      // Jika kategori kosong, simpan sebagai null
+      kategori: kategoriController.text.isEmpty
+          ? null
+          : kategoriController.text,
     );
 
     // Mengirim data kontak kembali ke halaman sebelumnya
@@ -254,8 +270,10 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
         foregroundColor: Colors.white,
         title: const Text('Tambah Kontak'),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(20.0),
+
         child: Column(
           children: [
             // NAMA
@@ -287,6 +305,17 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
               ),
             ),
 
+            const SizedBox(height: 15),
+
+            // KATEGORI
+            TextField(
+              controller: kategoriController,
+              decoration: const InputDecoration(
+                labelText: 'Kategori',
+                hintText: 'Contoh: Keluarga, Teman, Kerja',
+              ),
+            ),
+
             const SizedBox(height: 20),
 
             // TOMBOL SIMPAN
@@ -315,27 +344,40 @@ class TentangPage extends StatelessWidget {
         foregroundColor: Colors.white,
         title: const Text('Tentang'),
       ),
+
       body: const Center(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
+
           child: Center(
             child: Column(
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('assets/images/profile.png'),
+                  backgroundImage: AssetImage(
+                    'assets/images/profile.png',
+                  ),
                 ),
-                const SizedBox(height: 20),
+
+                SizedBox(height: 20),
+
                 Text(
                   'Dhani Arrgiawan W',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 10),
+
+                SizedBox(height: 10),
+
                 Text(
                   'XII RPL B',
                   style: TextStyle(fontSize: 16),
                 ),
-                const SizedBox(height: 10),
+
+                SizedBox(height: 10),
+
                 Text(
                   'SMK Negeri 5 Surakarta',
                   style: TextStyle(fontSize: 16),
@@ -355,9 +397,15 @@ class Kontak {
   String email;
   String noHandphone;
 
+  // Kategori boleh null
+  String? kategori;
+
   Kontak({
     required this.nama,
     required this.email,
     required this.noHandphone,
+
+    // Tidak wajib diisi
+    this.kategori,
   });
 }
