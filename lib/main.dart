@@ -32,7 +32,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // Menyimpan data kontak
   List<Kontak> items = [];
 
   // FUNGSI UNTUK MEMBUKA HALAMAN TAMBAH KONTAK
@@ -44,7 +43,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
 
-    // Jika ada data kontak yang dikirim kembali
     if (hasil != null) {
       setState(() {
         items.add(hasil);
@@ -62,7 +60,6 @@ class _MyHomePageState extends State<MyHomePage> {
         foregroundColor: Colors.white,
         title: const Text('BUKU KONTAK'),
 
-        // TAB BAR
         bottom: const TabBar(
           tabs: [
             Tab(
@@ -186,26 +183,46 @@ class _MyHomePageState extends State<MyHomePage> {
     return ListView.builder(
       itemCount: items.length,
       itemBuilder: (context, index) {
+        final kontak = items[index];
+
         return ListTile(
-          // Avatar berisi huruf pertama nama kontak
+          // Avatar berisi huruf pertama nama
           leading: CircleAvatar(
             child: Text(
-              items[index].nama.isNotEmpty
-                  ? items[index].nama[0].toUpperCase()
+              kontak.nama.isNotEmpty
+                  ? kontak.nama[0].toUpperCase()
                   : '?',
             ),
           ),
 
           // Nama kontak
           title: Text(
-            items[index].nama,
+            kontak.nama,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
 
-          // Email, nomor HP, dan kategori
-          subtitle: Text(
-            '${items[index].email}\n'
-            '${items[index].noHandphone}\n'
-            '${items[index].kategori ?? 'Tanpa kategori'}',
+          // Informasi kontak
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(kontak.email),
+              Text(kontak.noHandphone),
+
+              const SizedBox(height: 5),
+
+              // Kategori
+              Chip(
+                label: Text(
+                  kontak.kategori ?? 'Tanpa kategori',
+                ),
+                avatar: const Icon(
+                  Icons.label,
+                  size: 18,
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -222,7 +239,10 @@ class TambahKontakPage extends StatefulWidget {
 }
 
 class _TambahKontakPageState extends State<TambahKontakPage> {
-  // Controller untuk mengambil input
+  // GLOBAL KEY FORM
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  // CONTROLLER
   final TextEditingController namaController = TextEditingController();
 
   final TextEditingController emailController = TextEditingController();
@@ -230,7 +250,6 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
   final TextEditingController noHandphoneController =
       TextEditingController();
 
-  // Controller kategori
   final TextEditingController kategoriController =
       TextEditingController();
 
@@ -246,19 +265,15 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
   // FUNGSI SIMPAN KONTAK
   void simpanKontak() {
-    // Membuat objek kontak dari input
     Kontak kontak = Kontak(
       nama: namaController.text,
       email: emailController.text,
       noHandphone: noHandphoneController.text,
-
-      // Jika kategori kosong, simpan sebagai null
       kategori: kategoriController.text.isEmpty
           ? null
           : kategoriController.text,
     );
 
-    // Mengirim data kontak kembali ke halaman sebelumnya
     Navigator.pop(context, kontak);
   }
 
@@ -274,58 +289,117 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
 
-        child: Column(
-          children: [
-            // NAMA
-            TextField(
-              controller: namaController,
-              decoration: const InputDecoration(
-                labelText: 'Nama Lengkap',
+        // FORM
+        child: Form(
+          key: _formKey,
+
+          child: Column(
+            children: [
+              // =========================
+              // NAMA
+              // =========================
+              TextFormField(
+                controller: namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Lengkap',
+                ),
+
+                // VALIDATOR NAMA
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama wajib diisi';
+                  }
+
+                  return null;
+                },
               ),
-            ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // EMAIL
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
+              // =========================
+              // EMAIL
+              // =========================
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                ),
+
+                // VALIDATOR EMAIL
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email wajib diisi';
+                  }
+
+                  if (!value.contains('@')) {
+                    return 'Email harus mengandung karakter @';
+                  }
+
+                  return null;
+                },
               ),
-            ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // NOMOR HANDPHONE
-            TextField(
-              controller: noHandphoneController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'No Handphone',
+              // =========================
+              // NOMOR HANDPHONE
+              // =========================
+              TextFormField(
+                controller: noHandphoneController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'No Handphone',
+                ),
+
+                // VALIDATOR NOMOR HANDPHONE
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'No Handphone wajib diisi';
+                  }
+
+                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                    return 'No Handphone hanya boleh berisi angka';
+                  }
+
+                  if (value.length < 10) {
+                    return 'No Handphone minimal 10 digit';
+                  }
+
+                  return null;
+                },
               ),
-            ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 15),
 
-            // KATEGORI
-            TextField(
-              controller: kategoriController,
-              decoration: const InputDecoration(
-                labelText: 'Kategori',
-                hintText: 'Contoh: Keluarga, Teman, Kerja',
+              // =========================
+              // KATEGORI
+              // =========================
+              TextFormField(
+                controller: kategoriController,
+                decoration: const InputDecoration(
+                  labelText: 'Kategori',
+                  hintText: 'Contoh: Keluarga, Teman, Kerja',
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // TOMBOL SIMPAN
-            ElevatedButton(
-              onPressed: () {
-                simpanKontak();
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
+              // =========================
+              // TOMBOL SIMPAN
+              // =========================
+              ElevatedButton(
+                onPressed: () {
+                  // CEK VALIDASI FORM
+                  if (_formKey.currentState!.validate()) {
+                    // Jika semua valid, simpan kontak
+                    simpanKontak();
+                  }
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -349,41 +423,39 @@ class TentangPage extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(20),
 
-          child: Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage(
-                    'assets/images/profile.png',
-                  ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage(
+                  'assets/images/profile.png',
                 ),
+              ),
 
-                SizedBox(height: 20),
+              SizedBox(height: 20),
 
-                Text(
-                  'Dhani Arrgiawan W',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                'Dhani Arrgiawan W',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                SizedBox(height: 10),
+              SizedBox(height: 10),
 
-                Text(
-                  'XII RPL B',
-                  style: TextStyle(fontSize: 16),
-                ),
+              Text(
+                'XII RPL B',
+                style: TextStyle(fontSize: 16),
+              ),
 
-                SizedBox(height: 10),
+              SizedBox(height: 10),
 
-                Text(
-                  'SMK Negeri 5 Surakarta',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
+              Text(
+                'SMK Negeri 5 Surakarta',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
           ),
         ),
       ),
@@ -404,8 +476,6 @@ class Kontak {
     required this.nama,
     required this.email,
     required this.noHandphone,
-
-    // Tidak wajib diisi
     this.kategori,
   });
 }
