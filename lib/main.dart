@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -32,7 +33,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // Menyimpan data kontak
   List<Kontak> items = [];
+
+  // STREAM UNTUK PENCARIAN
+  final StreamController<String> _searchController =
+      StreamController<String>.broadcast();
+
+  @override
+  void dispose() {
+    // Menutup stream agar tidak terjadi memory leak
+    _searchController.close();
+    super.dispose();
+  }
 
   // FUNGSI UNTUK MEMBUKA HALAMAN TAMBAH KONTAK
   Future<void> tambahKontak() async {
@@ -43,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
 
+    // Jika ada data kontak yang dikirim kembali
     if (hasil != null) {
       setState(() {
         items.add(hasil);
@@ -60,6 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
         foregroundColor: Colors.white,
         title: const Text('BUKU KONTAK'),
 
+        // TAB BAR
         bottom: const TabBar(
           tabs: [
             Tab(
@@ -148,10 +163,10 @@ class _MyHomePageState extends State<MyHomePage> {
           daftarKontak(),
 
           // TAB FAVORIT
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Ibra Al Tabian'),
-            subtitle: const Text(
+          const ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Ibra Al Tabian'),
+            subtitle: Text(
               'ibraaaaa@gmail.com\n'
               '0851737264384',
             ),
@@ -171,61 +186,125 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // WIDGET DAFTAR KONTAK
   Widget daftarKontak() {
-    if (items.isEmpty) {
-      return const Center(
-        child: Text(
-          'Belum ada kontak',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final kontak = items[index];
-
-        return ListTile(
-          // Avatar berisi huruf pertama nama
-          leading: CircleAvatar(
-            child: Text(
-              kontak.nama.isNotEmpty
-                  ? kontak.nama[0].toUpperCase()
-                  : '?',
-            ),
-          ),
-
-          // Nama kontak
-          title: Text(
-            kontak.nama,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          // Informasi kontak
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(kontak.email),
-              Text(kontak.noHandphone),
-
-              const SizedBox(height: 5),
-
-              // Kategori
-              Chip(
-                label: Text(
-                  kontak.kategori ?? 'Tanpa kategori',
-                ),
-                avatar: const Icon(
-                  Icons.label,
-                  size: 18,
-                ),
+    return Column(
+      children: [
+        // =========================
+        // TEXTFIELD PENCARIAN
+        // =========================
+        Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: TextField(
+            decoration: InputDecoration(
+              labelText: 'Cari Kontak',
+              hintText: 'Cari berdasarkan nama atau kategori',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
+            ),
+
+            // Setiap teks berubah, kirim ke stream
+            onChanged: (teks) {
+              _searchController.add(teks);
+            },
           ),
-        );
-      },
+        ),
+
+        // =========================
+        // HASIL PENCARIAN
+        // =========================
+        Expanded(
+          child: StreamBuilder<String>(
+            stream: _searchController.stream,
+
+            // Nilai awal pencarian kosong
+            initialData: '',
+
+            builder: (context, snapshot) {
+              final kataKunci = snapshot.data!.toLowerCase();
+
+              // Filter berdasarkan nama ATAU kategori
+              final hasilPencarian = items.where((kontak) {
+                final nama = kontak.nama.toLowerCase();
+
+                final kategori =
+                    (kontak.kategori ?? '').toLowerCase();
+
+                return nama.contains(kataKunci) ||
+                    kategori.contains(kataKunci);
+              }).toList();
+
+              // Jika belum ada kontak
+              if (items.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Belum ada kontak',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                );
+              }
+
+              // Jika pencarian tidak menemukan hasil
+              if (hasilPencarian.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Kontak tidak ditemukan',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                );
+              }
+
+              // Menampilkan hasil pencarian
+              return ListView.builder(
+                itemCount: hasilPencarian.length,
+                itemBuilder: (context, index) {
+                  final kontak = hasilPencarian[index];
+
+                  return ListTile(
+                    // Avatar huruf pertama nama
+                    leading: CircleAvatar(
+                      child: Text(
+                        kontak.nama.isNotEmpty
+                            ? kontak.nama[0].toUpperCase()
+                            : '?',
+                      ),
+                    ),
+
+                    // Nama
+                    title: Text(
+                      kontak.nama,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    // Email, HP dan kategori
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(kontak.email),
+                        Text(kontak.noHandphone),
+
+                        const SizedBox(height: 5),
+
+                        Chip(
+                          label: Text(
+                            kontak.kategori ?? 'Tanpa kategori',
+                          ),
+                          avatar: const Icon(
+                            Icons.label,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -240,12 +319,15 @@ class TambahKontakPage extends StatefulWidget {
 
 class _TambahKontakPageState extends State<TambahKontakPage> {
   // GLOBAL KEY FORM
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey =
+      GlobalKey<FormState>();
 
   // CONTROLLER
-  final TextEditingController namaController = TextEditingController();
+  final TextEditingController namaController =
+      TextEditingController();
 
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController emailController =
+      TextEditingController();
 
   final TextEditingController noHandphoneController =
       TextEditingController();
@@ -269,6 +351,8 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       nama: namaController.text,
       email: emailController.text,
       noHandphone: noHandphoneController.text,
+
+      // Kategori opsional
       kategori: kategoriController.text.isEmpty
           ? null
           : kategoriController.text,
@@ -306,7 +390,8 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
                 // VALIDATOR NAMA
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'Nama wajib diisi';
                   }
 
@@ -321,14 +406,16 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
               // =========================
               TextFormField(
                 controller: emailController,
-                keyboardType: TextInputType.emailAddress,
+                keyboardType:
+                    TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                 ),
 
                 // VALIDATOR EMAIL
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'Email wajib diisi';
                   }
 
@@ -354,11 +441,13 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
                 // VALIDATOR NOMOR HANDPHONE
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null ||
+                      value.isEmpty) {
                     return 'No Handphone wajib diisi';
                   }
 
-                  if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                  if (!RegExp(r'^[0-9]+$')
+                      .hasMatch(value)) {
                     return 'No Handphone hanya boleh berisi angka';
                   }
 
@@ -379,7 +468,8 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                 controller: kategoriController,
                 decoration: const InputDecoration(
                   labelText: 'Kategori',
-                  hintText: 'Contoh: Keluarga, Teman, Kerja',
+                  hintText:
+                      'Contoh: Keluarga, Teman, Kerja',
                 ),
               ),
 
@@ -390,9 +480,8 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
               // =========================
               ElevatedButton(
                 onPressed: () {
-                  // CEK VALIDASI FORM
+                  // Validasi form terlebih dahulu
                   if (_formKey.currentState!.validate()) {
-                    // Jika semua valid, simpan kontak
                     simpanKontak();
                   }
                 },
