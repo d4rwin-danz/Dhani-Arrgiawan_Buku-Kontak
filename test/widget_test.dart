@@ -11,20 +11,40 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_design/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('kontak dapat ditambah, diupdate, dan dihapus',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.tap(find.byIcon(Icons.add).first);
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.enterText(find.byType(TextFormField).at(0), 'Budi');
+    await tester.enterText(find.byType(TextFormField).at(1), 'budi@mail.com');
+    await tester.enterText(find.byType(TextFormField).at(2), '081234567890');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Budi'), findsOneWidget);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Andi');
+    await tester.tap(find.text('Update'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Andi'), findsOneWidget);
+    expect(find.text('Budi'), findsNothing);
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+  await tester.pumpAndSettle();
+    await tester.tap(find.text('Hapus'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hapus'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Belum ada kontak'), findsOneWidget);
   });
 }

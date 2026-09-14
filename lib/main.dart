@@ -57,12 +57,65 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     // Jika ada data kontak yang dikirim kembali
+    if (!mounted) return;
+
     if (hasil != null) {
       setState(() {
         items.add(hasil);
       });
 
       DefaultTabController.of(context).animateTo(0);
+    }
+  }
+
+  // FUNGSI UNTUK MEMBUKA HALAMAN EDIT KONTAK
+  Future<void> editKontak(Kontak kontak) async {
+    final hasil = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TambahKontakPage(kontak: kontak),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (hasil != null) {
+      final index = items.indexOf(kontak);
+
+      if (index != -1) {
+        setState(() {
+          items[index] = hasil;
+        });
+      }
+    }
+  }
+
+  // FUNGSI UNTUK MENGHAPUS KONTAK
+  Future<void> hapusKontak(Kontak kontak) async {
+    final konfirmasi = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Kontak'),
+        content: Text('Hapus kontak ${kontak.nama}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (konfirmasi == true) {
+      setState(() {
+        items.remove(kontak);
+      });
     }
   }
 
@@ -298,6 +351,26 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ],
                     ),
+
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (aksi) {
+                        if (aksi == 'edit') {
+                          editKontak(kontak);
+                        } else if (aksi == 'hapus') {
+                          hapusKontak(kontak);
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        PopupMenuItem(
+                          value: 'hapus',
+                          child: Text('Hapus'),
+                        ),
+                      ],
+                    ),
                   );
                 },
               );
@@ -311,7 +384,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
 // HALAMAN TAMBAH KONTAK
 class TambahKontakPage extends StatefulWidget {
-  const TambahKontakPage({super.key});
+  final Kontak? kontak;
+
+  const TambahKontakPage({super.key, this.kontak});
 
   @override
   State<TambahKontakPage> createState() => _TambahKontakPageState();
@@ -334,6 +409,22 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
 
   final TextEditingController kategoriController =
       TextEditingController();
+
+  bool get modeEdit => widget.kontak != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final kontak = widget.kontak;
+
+    if (kontak != null) {
+      namaController.text = kontak.nama;
+      emailController.text = kontak.email;
+      noHandphoneController.text = kontak.noHandphone;
+      kategoriController.text = kontak.kategori ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -367,7 +458,7 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
       appBar: AppBar(
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        title: const Text('Tambah Kontak'),
+        title: Text(modeEdit ? 'Edit Kontak' : 'Tambah Kontak'),
       ),
 
       body: Padding(
@@ -485,7 +576,7 @@ class _TambahKontakPageState extends State<TambahKontakPage> {
                     simpanKontak();
                   }
                 },
-                child: const Text('Simpan'),
+                child: Text(modeEdit ? 'Update' : 'Simpan'),
               ),
             ],
           ),
